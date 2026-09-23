@@ -19,7 +19,10 @@ END
 \$\$;
 SQL
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f /opt/zanifol-db/001_init.sql
+for migration in /opt/zanifol-db/*.sql; do
+  echo "Applying $migration"
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f "$migration"
+done
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<SQL
 GRANT CONNECT ON DATABASE "$POSTGRES_DB" TO zanifol_app;
