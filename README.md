@@ -6,19 +6,22 @@ Plateforme éducative et ludique portée par REFLEX MEDIACOM, en coproduction av
 
 - accueil responsive inspiré de la présentation visuelle validée ;
 - personnages Lion, Taupe et Rihno utilisés comme assets du projet ;
-- jeux éducatifs et mini quiz ;
-- vidéos / histoires ;
+- jeux éducatifs interactifs et mini quiz ;
+- catalogue vidéos / histoires avec états d’attente tant que les médias définitifs ne sont pas fournis ;
 - ZaniChat derrière une API serveur avec activation parentale ;
-- compte parent avec email vérifié ;
+- compte parent avec vérification email et réinitialisation du mot de passe ;
 - profils enfants pseudonymes avec code famille + PIN ;
 - profil enfant en attente jusqu’à approbation parentale ;
 - progression, favoris et réglages par profil ;
-- export des données parent ;
-- PostgreSQL avec isolation des données par règles d’accès ;
+- limite quotidienne par enfant avec suivi serveur et affichage du temps restant ;
+- tableau de bord parent avec usage du jour ;
+- export et suppression des données ;
+- PostgreSQL avec Row Level Security pour les données enfant ;
 - six langues : français, anglais, arabe, espagnol, chinois, japonais ;
-- RTL pour l’arabe ;
+- RTL automatique pour l’arabe ;
 - pages légales, confidentialité enfant et CGU ;
-- Docker + Nginx + Node + PostgreSQL pour OVHcloud.
+- Docker + Nginx + Node + PostgreSQL pour OVHcloud ;
+- scripts de migration, sauvegarde et restauration PostgreSQL.
 
 ## Sécurité intégrée
 
@@ -26,29 +29,41 @@ Plateforme éducative et ludique portée par REFLEX MEDIACOM, en coproduction av
 - Argon2id pour mots de passe et PIN ;
 - sessions parent/enfant séparées ;
 - cookies HttpOnly/Secure en production et jetons CSRF ;
+- vérification Origin / Sec-Fetch-Site pour les écritures ;
 - rate limiting Nginx + API ;
 - CSP, anti-clickjacking, no-sniff et politique de permissions ;
-- PostgreSQL sans port Internet ;
-- API sans port Internet ;
+- PostgreSQL et API sans port Internet public ;
+- réseaux Docker séparés et base sur réseau interne ;
 - conteneurs avec privilèges réduits ;
-- ZaniChat sans outil d’administration ni accès direct à GitHub/OVH/secrets ;
-- filtrage de données personnelles et modération IA ;
-- CodeQL GitHub.
+- ZaniChat sans outil d’administration ni accès direct à GitHub, OVH, SSH, secrets ou base ;
+- filtrage de données personnelles et modération IA en entrée et sortie ;
+- CodeQL, Dependabot et Backend CI ;
+- CI avec syntaxe, tests unitaires, migrations PostgreSQL rejouées, build Docker et validation Nginx.
 
 ## Déploiement
 
 Voir `DEPLOY_OVH.md`. Copier `.env.example` vers `.env` uniquement sur le serveur et générer de vrais secrets aléatoires.
 
+Outils d’exploitation :
+
+```bash
+sh ops/backup.sh
+sh ops/migrate.sh
+RESTORE_CONFIRM=YES sh ops/restore.sh backups/<fichier>.dump
+```
+
 ## Éléments externes à renseigner avant ouverture publique
 
-Le code peut être préparé sans ces informations, mais la mise en production publique nécessite encore :
+Le code est préparé, mais une mise en production publique nécessite encore :
 
-- le domaine définitif ;
-- les accès à l’environnement OVH ou un déploiement réalisé par l’administrateur OVH ;
-- les paramètres SMTP pour la vérification des comptes parents ;
-- une clé IA si ZaniChat doit être réellement activé ;
-- l’email/téléphone légal et la TVA si applicable ;
-- le nom public définitif de la marque ;
-- une validation finale juridique RGPD/mineurs et un test de sécurité avant ouverture des inscriptions.
+- le nom public définitif et le domaine ;
+- l’accès à l’environnement OVH pour effectuer le déploiement ;
+- les paramètres SMTP de production ;
+- une clé IA uniquement si ZaniChat doit être activé ;
+- les coordonnées légales finales et les informations exactes de l’hébergeur ;
+- les fichiers/URLs définitifs des clips ;
+- la validation juridique RGPD/mineurs ;
+- un test de restauration et un test de sécurité sur l’environnement de production ;
+- la protection de la branche `main` et, idéalement, un dépôt GitHub privé pendant le développement.
 
 Le nom `zanifoliz` du dépôt est historique et pourra être renommé lorsque la marque définitive sera choisie.
