@@ -23,7 +23,25 @@ jobs:
         run: npm run check
       - name: Unit tests
         run: npm test
+      - name: PostgreSQL migration smoke test
+        run: |
+          docker run -d --name zanifol-ci-db \
+            -e POSTGRES_PASSWORD=ci-only-password \
+            -e POSTGRES_DB=zanifol \
+            postgres:16-alpine
+          for i in $(seq 1 30); do
+            if docker exec zanifol-ci-db pg_isready -U postgres -d zanifol; then break; fi
+            sleep 1
+          done
+          docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/001_init.sql
+          docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/002_daily_usage.sql
+          # Rejouer les migrations vérifie aussi leur caractère idempotent.
+          docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/001_init.sql
+          docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/002_daily_usage.sql
+          docker rm -f zanifol-ci-db
       - name: Prepare build-only environment
         run: cp .env.example .env
       - name: Build Docker images
         run: docker compose build
+      - name: Validate Nginx image configuration
+        run: docker compose run --rm --no-deps web nginx -t
