@@ -19,10 +19,10 @@ END
 \$\$;
 SQL
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/001_init.sql
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f /opt/zanifol-db/001_init.sql
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'SQL'
-GRANT CONNECT ON DATABASE zanifol TO zanifol_app;
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<SQL
+GRANT CONNECT ON DATABASE "$POSTGRES_DB" TO zanifol_app;
 GRANT USAGE ON SCHEMA public TO zanifol_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO zanifol_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO zanifol_app;
