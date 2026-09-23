@@ -19,6 +19,9 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install
+      - name: Dependency audit report
+        continue-on-error: true
+        run: npm audit --omit=dev
       - name: Syntax checks
         run: npm run check
       - name: Unit tests
@@ -29,10 +32,20 @@ jobs:
             -e POSTGRES_PASSWORD=ci-only-password \
             -e POSTGRES_DB=zanifol \
             postgres:16-alpine
-          for i in $(seq 1 30); do
-            if docker exec zanifol-ci-db pg_isready -U postgres -d zanifol; then break; fi
+          ready=0
+          for i in $(seq 1 45); do
+            if docker exec zanifol-ci-db psql -U postgres -d zanifol -Atqc 'SELECT 1' 2>/dev/null | grep -qx 1; then
+              ready=$((ready+1))
+              if [ "$ready" -ge 3 ]; then break; fi
+            else
+              ready=0
+            fi
             sleep 1
           done
+          if [ "$ready" -lt 3 ]; then
+            docker logs zanifol-ci-db
+            exit 1
+          fi
           docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/001_init.sql
           docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/002_daily_usage.sql
           # Rejouer les migrations vérifie aussi leur caractère idempotent.
