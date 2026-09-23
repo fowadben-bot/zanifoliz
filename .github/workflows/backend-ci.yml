@@ -54,5 +54,19 @@ jobs:
         run: cp .env.example .env
       - name: Build Docker images
         run: docker compose build
+      - name: Start private services for Nginx validation
+        run: docker compose up -d db api
       - name: Validate Nginx image configuration
         run: docker compose run --rm --no-deps web nginx -t
+      - name: Check API health through Nginx
+        run: |
+          docker compose up -d web
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:8080/api/health | grep -q '"ok":true'; then exit 0; fi
+            sleep 1
+          done
+          docker compose logs
+          exit 1
+      - name: Cleanup integration stack
+        if: always()
+        run: docker compose down -v --remove-orphans
