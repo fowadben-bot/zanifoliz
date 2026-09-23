@@ -1,8 +1,69 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: zanifol
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
+      - ./db/001_init.sql:/opt/zanifol-db/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zanifol"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dbnet
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: zanifol
+      DB_USER: zanifol_app
+      DB_PASSWORD: ${APP_DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - appnet
+      - dbnet
+
   web:
     build:
       context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
     read_only: true
     tmpfs:
       - /var/cache/nginx
@@ -18,3 +79,13 @@ services:
       - NET_BIND_SERVICE
     ports:
       - "127.0.0.1:8080:8080"
+    networks:
+      - appnet
+
+volumes:
+  pgdata:
+
+networks:
+  appnet:
+  dbnet:
+    internal: true
