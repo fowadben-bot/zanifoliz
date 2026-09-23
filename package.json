@@ -6,7 +6,7 @@
   "engines": {"node": ">=22"},
   "scripts": {
     "start": "node server/app.js",
-    "check": "node --check server/app.js && node --check server/db.js && node --check server/security.js && node --check server/mailer.js && node --check server/ai.js",
+    "check": "node --check app.js && node --check api-client.js && node --check server/app.js && node --check server/db.js && node --check server/security.js && node --check server/mailer.js && node --check server/ai.js",
     "test": "node --test server/test/*.test.js"
   },
   "dependencies": {
