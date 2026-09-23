@@ -50,6 +50,8 @@ docker compose up -d --build
 docker compose ps
 ```
 
+Au premier démarrage d’un volume PostgreSQL neuf, les migrations `db/*.sql` sont appliquées automatiquement.
+
 Contrôle local :
 
 ```bash
@@ -60,7 +62,7 @@ La réponse attendue est un JSON avec `ok: true`.
 
 ## 4. HTTPS sur l’hôte
 
-Le reverse proxy HTTPS de l’hôte doit envoyer le domaine vers `http://127.0.0.1:8080`. Activer HSTS uniquement une fois HTTPS validé sur le domaine. Rediriger HTTP vers HTTPS.
+Le reverse proxy HTTPS de l’hôte doit envoyer le domaine vers `http://127.0.0.1:8080`. Rediriger HTTP vers HTTPS. Activer HSTS uniquement une fois HTTPS validé sur le domaine et ses sous-domaines concernés.
 
 En production, vérifier notamment :
 - TLS moderne ;
@@ -69,36 +71,58 @@ En production, vérifier notamment :
 - journaux sans contenu sensible enfant ;
 - renouvellement automatique du certificat.
 
-## 5. Sauvegardes
+## 5. Migrations de base existante
 
-Sauvegarder PostgreSQL régulièrement dans un emplacement chiffré et distinct du serveur principal. Exemple manuel :
+Pour un serveur déjà initialisé, appliquer les migrations après sauvegarde :
 
 ```bash
-docker compose exec -T db pg_dump -U postgres -d zanifol | gzip > zanifol-$(date +%F).sql.gz
+sh ops/backup.sh
+sh ops/migrate.sh
 ```
 
-Tester régulièrement une restauration sur un environnement séparé. Définir avant ouverture publique la durée de conservation des sauvegardes contenant des données personnelles.
+Les migrations sont écrites pour pouvoir être rejouées sans recréer les tables existantes. Toujours vérifier la sauvegarde avant une migration importante.
 
-## 6. Mise à jour
+## 6. Sauvegardes et restauration
+
+Créer une sauvegarde PostgreSQL :
 
 ```bash
+sh ops/backup.sh
+```
+
+Par défaut, elle est placée dans `./backups` avec des permissions restrictives et les fichiers de plus de 7 jours sont supprimés. Adapter `RETENTION_DAYS` à la politique de conservation validée. Copier ensuite les sauvegardes dans un stockage distinct et chiffré avec accès limité.
+
+Restauration destructive :
+
+```bash
+RESTORE_CONFIRM=YES sh ops/restore.sh backups/zanifol-YYYYMMDDTHHMMSSZ.dump
+```
+
+Tester régulièrement la restauration sur un environnement séparé avant de compter sur les sauvegardes en production.
+
+## 7. Mise à jour
+
+```bash
+sh ops/backup.sh
 git pull --ff-only
+docker compose up -d db
+sh ops/migrate.sh
 docker compose up -d --build
 curl -fsS http://127.0.0.1:8080/api/health
 ```
 
 Ne pas effectuer une mise à jour majeure de PostgreSQL sans sauvegarde et procédure de migration testée.
 
-## 7. Avant ouverture publique
+## 8. Avant ouverture publique
 
 - compléter l’email, le téléphone, la TVA si applicable et l’entité OVH exacte dans les pages légales ;
 - vérifier le contrat et les informations du prestataire SMTP ;
 - vérifier le paramétrage de l’IA et les conditions applicables si ZaniChat est activé ;
 - effectuer une revue RGPD/mineurs et une revue de sécurité ;
-- tester création/vérification parent, profil enfant en attente, approbation parent, connexion enfant, activation/désactivation IA, export et suppression ;
+- tester création/vérification parent, profil enfant en attente, approbation parent, connexion enfant, activation/désactivation IA, limite quotidienne, export et suppression ;
 - tester français, anglais, arabe RTL, espagnol, chinois et japonais ;
 - tester ordinateur, tablette et mobile ;
-- activer une stratégie de sauvegarde et de supervision.
+- activer une stratégie de sauvegarde, restauration testée et supervision.
 
 ## Principe de sécurité ZaniChat
 
