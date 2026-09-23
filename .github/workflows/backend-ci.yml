@@ -19,9 +19,8 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install
-      - name: Dependency audit report
-        continue-on-error: true
-        run: npm audit --omit=dev
+      - name: Block high/critical dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
       - name: Syntax checks
         run: npm run check
       - name: Unit tests
@@ -48,7 +47,6 @@ jobs:
           fi
           docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/001_init.sql
           docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/002_daily_usage.sql
-          # Rejouer les migrations vérifie aussi leur caractère idempotent.
           docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/001_init.sql
           docker exec -i zanifol-ci-db psql -v ON_ERROR_STOP=1 -U postgres -d zanifol < db/002_daily_usage.sql
           docker rm -f zanifol-ci-db
