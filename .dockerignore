@@ -4,6 +4,13 @@
 README.md
 SECURITY.md
 docs
+node_modules
+coverage
+backups
 *.log
+*.sql
+*.sql.gz
 .env
 .env.*
+!.env.example
+.DS_Store
