@@ -6,16 +6,16 @@
   "engines": {"node": ">=22"},
   "scripts": {
     "start": "node server/app.js",
-    "check": "node --check app.js && node --check api-client.js && node --check content-i18n.js && node --check games.js && node --check media.js && node --check server/app.js && node --check server/db.js && node --check server/security.js && node --check server/mailer.js && node --check server/ai.js && node --check server/usage.js",
+    "check": "node --check app.js && node --check api-client.js && node --check content-i18n.js && node --check games.js && node --check media.js && node --check usage-client.js && node --check parent-usage.js && node --check server/app.js && node --check server/db.js && node --check server/security.js && node --check server/mailer.js && node --check server/ai.js && node --check server/usage.js",
     "test": "node --test server/test/*.test.js"
   },
   "dependencies": {
     "argon2": "0.41.1",
     "cookie-parser": "1.4.7",
     "express": "5.1.0",
-    "express-rate-limit": "8.1.0",
+    "express-rate-limit": "8.5.2",
     "helmet": "8.1.0",
-    "nodemailer": "7.0.6",
+    "nodemailer": "10.0.10",
     "pg": "8.16.3",
     "zod": "4.1.11"
   }
